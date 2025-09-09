@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Clock, CheckCircle, AlertCircle, MoreVertical, Edit2, Trash2, Target, Repeat, ListTodo, CalendarPlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, MoreVertical, Edit2, Trash2, Target, Repeat, ListTodo, CalendarPlus, ChevronLeft, ChevronRight, Zap, Lightbulb } from 'lucide-react';
 import { Draggable } from '@hello-pangea/dnd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useActivities, Activity } from '../../contexts/ActivitiesContext';
 import { Button } from '../ui/Button';
-import { format, parseISO } from 'date-fns'; // Importe format e parseISO
+import { format, parseISO } from 'date-fns';
 
 interface DailyTasksProps {
   viewMode: 'day' | 'week' | 'year';
@@ -12,14 +12,14 @@ interface DailyTasksProps {
 }
 
 export const DailyTasks: React.FC<DailyTasksProps> = ({ viewMode, filterType }) => {
-  const { activities, toggleActivityStatus, deleteActivity, deleteRoutine } = useActivities();
-  const [selectedTaskId, setSelectedTaskId] = React.useState<string | null>(null);
+  const { activities, toggleActivityStatus, deleteActivity, deleteRoutine, loading } = useActivities();
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 7;
 
   const getFilteredActivities = () => {
     const today = new Date();
-    const todayStr = format(today, 'yyyy-MM-dd'); // Usar format para consistência
+    const todayStr = format(today, 'yyyy-MM-dd');
     const startOfWeek = new Date(today);
     startOfWeek.setHours(0, 0, 0, 0);
     startOfWeek.setDate(today.getDate() - today.getDay());
@@ -42,13 +42,13 @@ export const DailyTasks: React.FC<DailyTasksProps> = ({ viewMode, filterType }) 
         break;
       case 'week':
         filteredActivities = activities.filter(activity => {
-          const activityDate = parseISO(activity.date); // Usar parseISO
+          const activityDate = parseISO(activity.date);
           return activityDate >= startOfWeek && activityDate <= endOfWeek;
         });
         break;
       case 'year':
         filteredActivities = activities.filter(activity => {
-          const activityDate = parseISO(activity.date); // Usar parseISO
+          const activityDate = parseISO(activity.date);
           return activityDate >= startOfYear && activityDate <= endOfYear;
         });
         break;
@@ -73,7 +73,7 @@ export const DailyTasks: React.FC<DailyTasksProps> = ({ viewMode, filterType }) 
     }
 
     return filteredActivities.sort((a, b) => {
-      const dateComparison = parseISO(a.date).getTime() - parseISO(b.date).getTime(); // Usar parseISO
+      const dateComparison = parseISO(a.date).getTime() - parseISO(b.date).getTime();
       if (dateComparison !== 0) return dateComparison;
       
       const timeA = a.time || '00:00';
@@ -108,6 +108,17 @@ export const DailyTasks: React.FC<DailyTasksProps> = ({ viewMode, filterType }) 
     }
   };
 
+  const getPriorityBgColor = (priority: Activity['priority']) => {
+    switch (priority) {
+      case 'high':
+        return 'bg-red-500';
+      case 'medium':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-blue-500';
+    }
+  };
+
   const getTypeIcon = (type: Activity['type']) => {
     switch (type) {
       case 'goal':
@@ -116,6 +127,28 @@ export const DailyTasks: React.FC<DailyTasksProps> = ({ viewMode, filterType }) 
         return <Repeat className="h-4 w-4 text-blue-500" />;
       default:
         return <ListTodo className="h-4 w-4 text-green-500" />;
+    }
+  };
+  
+  const getEnergyLevel = (priority: Activity['priority']) => {
+    switch (priority) {
+      case 'high':
+        return 'Energia alta';
+      case 'medium':
+        return 'Energia média';
+      default:
+        return 'Energia baixa';
+    }
+  };
+  
+  const getEnergyIconColor = (priority: Activity['priority']) => {
+    switch (priority) {
+      case 'high':
+        return 'text-red-500';
+      case 'medium':
+        return 'text-yellow-500';
+      default:
+        return 'text-blue-500';
     }
   };
 
@@ -151,103 +184,115 @@ export const DailyTasks: React.FC<DailyTasksProps> = ({ viewMode, filterType }) 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
                 className={`
-                  relative flex items-center justify-between p-4 
-                  bg-gray-800/50 rounded-lg border-l-4 
+                  relative p-4 bg-gray-800/50 rounded-lg border-l-4 
                   ${getPriorityColor(task.priority)}
                   transition-all duration-200 hover:bg-gray-800
                   group
                 `}
               >
-                <div className="flex items-center gap-4 flex-1">
-                  <button
-                    onClick={() => toggleActivityStatus(task.id)}
-                    className={`transition-colors ${
-                      task.status === 'completed'
-                        ? 'text-green-500'
-                        : 'text-gray-400 hover:text-green-500'
-                    }`}
-                  >
-                    <CheckCircle className="h-5 w-5" />
-                  </button>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      {getTypeIcon(task.type)}
-                      <h4 className={`font-medium ${
-                        task.status === 'completed' ? 'line-through text-gray-400' : 'text-white'
-                      }`}>
-                        {task.title}
-                      </h4>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {task.time || 'Não especificado'}
-                      </span>
-                      {/* CORRIGIDO: Usar format(parseISO()) para exibir a data */}
-                      <span>{format(parseISO(task.date), 'dd/MM/yyyy')}</span>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <button
+                      onClick={() => toggleActivityStatus(task.id)}
+                      className={`transition-colors flex-shrink-0 ${
+                        task.status === 'completed'
+                          ? 'text-green-500'
+                          : 'text-gray-400 hover:text-green-500'
+                      }`}
+                      disabled={loading}
+                    >
+                      <CheckCircle className="h-6 w-6" />
+                    </button>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-medium text-white">
+                          {task.title}
+                        </span>
+                        {task.priority && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getPriorityBgColor(task.priority)}/50`}>
+                            {task.priority}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {task.description && (
+                        <p className="text-sm text-gray-400 mb-2">
+                          {task.description}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{task.time || 'Não especificado'}</span>
+                        </div>
+                        {task.estimatedDuration && (
+                          <div className="flex items-center gap-1">
+                            <Zap className="h-4 w-4" />
+                            <span>{task.estimatedDuration} min</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Lightbulb className={`h-4 w-4 ${getEnergyIconColor(task.priority)}`} />
+                          <span>{getEnergyLevel(task.priority)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  
+                  <div className="relative flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => setSelectedTaskId(selectedTaskId === task.id ? null : task.id)}
+                      className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <MoreVertical className="h-4 w-4 text-gray-400" />
+                    </button>
 
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(task.status)}`}>
-                      {task.status === 'completed' ? 'Concluído' : 
-                       task.status === 'late' ? 'Atrasado' : 'Pendente'}
-                    </span>
-
-                    <div className="relative">
-                      <button
-                        onClick={() => setSelectedTaskId(selectedTaskId === task.id ? null : task.id)}
-                        className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
-                      >
-                        <MoreVertical className="h-4 w-4 text-gray-400" />
-                      </button>
-
-                      <AnimatePresence>
-                        {selectedTaskId === task.id && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="absolute right-0 top-full mt-1 bg-gray-800 rounded-lg shadow-lg py-1 min-w-[120px] z-10"
+                    <AnimatePresence>
+                      {selectedTaskId === task.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="absolute right-0 top-full mt-1 bg-gray-800 rounded-lg shadow-lg py-1 min-w-[120px] z-10"
+                        >
+                          <button
+                            onClick={() => {
+                              setSelectedTaskId(null);
+                              alert('Funcionalidade de edição ainda não implementada.');
+                            }}
+                            className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 hover:bg-gray-700 transition-colors"
                           >
+                            <Edit2 className="h-4 w-4" />
+                            Editar
+                          </button>
+                          {task.type === 'routine' && task.routineId ? (
                             <button
                               onClick={() => {
+                                deleteRoutine(task.routineId!);
                                 setSelectedTaskId(null);
-                                alert('Funcionalidade de edição ainda não implementada.');
                               }}
-                              className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 hover:bg-gray-700 transition-colors"
+                              className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 text-red-500 hover:bg-gray-700 transition-colors"
                             >
-                              <Edit2 className="h-4 w-4" />
-                              Editar
+                              <Trash2 className="h-4 w-4" />
+                              Excluir Rotina
                             </button>
-                            {task.type === 'routine' && task.routineId ? (
-                              <button
-                                onClick={() => {
-                                  deleteRoutine(task.routineId!);
-                                  setSelectedTaskId(null);
-                                }}
-                                className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 text-red-500 hover:bg-gray-700 transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Excluir Rotina
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  deleteActivity(task.id);
-                                  setSelectedTaskId(null);
-                                }}
-                                className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 text-red-500 hover:bg-gray-700 transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Excluir Atividade
-                              </button>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                deleteActivity(task.id);
+                                setSelectedTaskId(null);
+                              }}
+                              className="w-full px-4 py-2 text-sm text-left flex items-center gap-2 text-red-500 hover:bg-gray-700 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Excluir Atividade
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </motion.div>
