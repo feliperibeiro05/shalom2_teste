@@ -1,0 +1,16 @@
+// tsconfig.json (RAIZ DO PROJETO)
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": { // <--- ADICIONE ESTE BLOCO COMPLETO AQUI
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"]
+    }
+  }
+}

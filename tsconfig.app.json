@@ -1,0 +1,36 @@
+// tsconfig.app.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    
+    // --- MANTENHA ESTAS PROPRIEDADES TAMBÉM NO tsconfig.app.json ---
+    // Elas são necessárias para a compilação real do seu app.
+    "baseUrl": ".", 
+    "paths": {
+      "@/*": ["./src/*"], 
+      "@/components/*": ["./src/components/*"], 
+      "@/lib/*": ["./src/lib/*"] 
+    },
+    "resolveJsonModule": true 
+    // --- FIM DAS PROPRIEDADES ---
+  },
+  "include": ["src"]
+}
